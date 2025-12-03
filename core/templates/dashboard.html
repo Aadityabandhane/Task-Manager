@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow mt-3 p-4">
+            <h2>👋 Welcome, {{ request.user.username }}</h2> 
+            <p class="text-secondary">Quick access links:</p>
+            <div class="d-grid gap-2 mt-3">
+                
+                {# 💡 NEW: Link to create tasks, visible ONLY to Superusers #}
+                {% if request.user.is_superuser %}
+                    <a href="{% url 'task_create' %}" class="btn btn-success">Assign New Task</a>
+                {% endif %}
+                
+                <a href="{% url 'task_list' %}" class="btn btn-primary">View Tasks</a> 
+                
+                <a href="{% url 'profile' %}" class="btn btn-primary">View Profile</a>
+                <a href="{% url 'settings' %}" class="btn btn-primary">Edit Profile</a>
+                <a href="{% url 'analytics' %}" class="btn btn-primary">View Analytics</a>
+                <a href="{% url 'logout' %}" class="btn btn-danger mt-3">Logout</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Task List{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>🎯 {{ page_title }}</h2> 
+            
+            {% if is_admin %}
+                {# Only Admin sees the Assign New Task button #}
+                <a href="{% url 'task_create' %}" class="btn btn-primary" style="width: auto;">+ Assign New Task</a>
+            {% endif %}
+            
+            {# Removed the 'Create Personal Task' link for normal users #}
+        </div>
+        
+        <div class="card shadow mt-3 p-4">
+            
+            {% for task in tasks %}
+            <div class="task-item p-3 mb-3 border rounded shadow-sm d-flex justify-content-between align-items-center">
+                
+                <div>
+                    <h4>{{ task.title }}</h4>
+                    <p class="mb-1 text-muted">{{ task.description|truncatechars:100 }}</p>
+                    <small>
+                        {# 💡 FIX: Removed time formatting since due_date is now a DateField #}
+                        Due: {{ task.due_date|date:"M d, Y" }} | Priority: <strong>{{ task.priority }}</strong>
+                        
+                        {% if is_admin %}
+                            | Assigned To: <strong>{{ task.assigned_to.username }}</strong>
+                        {% endif %}
+                    </small>
+                </div>
+                
+                <div class="text-end">
+                    <span class="badge bg-{{ task.status|lower }}">{{ task.status }}</span>
+                    <br>
+                    
+                    {# 💡 FIX: Only Superusers see the Edit button #}
+                    {% if is_admin %}
+                        <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-outline-primary mt-2">Edit</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <p class="alert alert-info mb-0">You have no tasks found matching the criteria.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.badge.bg-todo { background-color: #0d6efd !important; }
+.badge.bg-in_progress { background-color: #ffc107 !important; color: #000; }
+.badge.bg-done { background-color: #28a745 !important; }
+.badge.bg-blocked { background-color: #dc3545 !important; }
+
+.task-item {
+    border-left: 5px solid var(--primary-blue);
+    transition: transform 0.2s;
+    background-color: var(--white);
+}
+.task-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+</style>
+{% endblock %}

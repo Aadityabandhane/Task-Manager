@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow mt-3">
+            <h2>👤 My Profile</h2>
+
+            <div class="text-center mb-4">
+                {% if profile.profile_image %}
+                <div id="profile-image-container">
+                    <img src="{{ profile.profile_image.url }}" width="120" height="120" class="rounded-circle">
+                </div>
+                {% else %}
+                <div class="bg-light p-3 border rounded-circle mx-auto" style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #6c757d;">
+                    N/A
+                </div>
+                {% endif %}
+            </div>
+
+            <div id="profile-details" class="mb-4">
+                <p><strong>Name:</strong> {{ profile.full_name|default:"Not Set" }}</p>
+                <p><strong>Phone:</strong> {{ profile.phone|default:"Not Set" }}</p>
+                <p><strong>Bio:</strong> {{ profile.bio|default:"No bio provided." }}</p>
+            </div>
+
+            <a href="{% url 'settings' %}" class="btn btn-primary">Edit Profile</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

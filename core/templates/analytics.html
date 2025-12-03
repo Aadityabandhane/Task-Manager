@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Task Analytics{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow mt-3 p-4">
+            <h2>📈 Task Analytics & Overview</h2>
+            
+            <p class="lead">Viewing statistics for <strong>{{ request.user.username }}'s</strong> tasks.</p>
+            {% if is_admin %}
+                <p class="text-muted small">Displaying results across all system tasks.</p>
+            {% endif %}
+
+            <div class="row mb-4 text-center">
+                <div class="col-md-4">
+                    <div class="p-3 border rounded">
+                        <h4 class="text-primary">{{ total_tasks }}</h4>
+                        <p class="mb-0 text-muted">Total Tasks</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-warning-subtle">
+                        <h4 class="text-warning">{{ overdue_count }}</h4>
+                        <p class="mb-0 text-muted">Overdue Tasks</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-success-subtle">
+                        <h4 class="text-success">{{ status_summary|get_count:'DONE' }}</h4>
+                        <p class="mb-0 text-muted">Completed Tasks</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Status Breakdown</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in status_summary %}
+                    <tr>
+                        <td>{{ item.status|default:'Unknown' }}</td>
+                        <td>{{ item.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h3 class="mt-4">Priority Breakdown</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Priority</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in priority_summary %}
+                    <tr>
+                        <td>{{ item.priority|default:'Unknown' }}</td>
+                        <td>{{ item.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% load custom_filters %} 
+{% endblock %}
