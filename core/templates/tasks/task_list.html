@@ -1,69 +1,607 @@
-{% extends 'base.html' %}
-{% block title %}Task List{% endblock %}
+<!-- tasks/task_list.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-10">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>🎯 {{ page_title }}</h2> 
-            
-            {% if is_admin %}
-                {# Only Admin sees the Assign New Task button #}
-                <a href="{% url 'task_create' %}" class="btn btn-primary" style="width: auto;">+ Assign New Task</a>
-            {% endif %}
-            
-            {# Removed the 'Create Personal Task' link for normal users #}
-        </div>
-        
-        <div class="card shadow mt-3 p-4">
-            
-            {% for task in tasks %}
-            <div class="task-item p-3 mb-3 border rounded shadow-sm d-flex justify-content-between align-items-center">
-                
-                <div>
-                    <h4>{{ task.title }}</h4>
-                    <p class="mb-1 text-muted">{{ task.description|truncatechars:100 }}</p>
-                    <small>
-                        {# 💡 FIX: Removed time formatting since due_date is now a DateField #}
-                        Due: {{ task.due_date|date:"M d, Y" }} | Priority: <strong>{{ task.priority }}</strong>
-                        
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0">{{ page_title }}</h4>
                         {% if is_admin %}
-                            | Assigned To: <strong>{{ task.assigned_to.username }}</strong>
+                        <a href="{% url 'task_create' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-2"></i>Create Task
+                        </a>
                         {% endif %}
-                    </small>
+                    </div>
+                    
+                    <!-- SEARCH AND FILTERS FORM -->
+                    <form method="get" class="mb-2" id="filterForm">
+                        <div class="row g-2 align-items-center">
+                            <!-- Search Input -->
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label small mb-1 d-block">SEARCH TASKS</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                    <input type="text" 
+                                           name="q" 
+                                           class="form-control border-start-0" 
+                                           placeholder="Search tasks..." 
+                                           value="{{ search_query }}"
+                                           id="searchInput">
+                                    {% if search_query %}
+                                    <button type="button" 
+                                            class="btn btn-outline-secondary border" 
+                                            onclick="clearSearch()"
+                                            title="Clear search">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Status Filter -->
+                            <div class="col-lg-2 col-md-4">
+                                <label class="form-label small mb-1 d-block">STATUS</label>
+                                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    <option value="all">All Status</option>
+                                    {% for status_key, status_label in status_choices %}
+                                    <option value="{{ status_key }}" 
+                                            {% if status_filter == status_key %}selected{% endif %}>
+                                        {{ status_label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Priority Filter -->
+                            <div class="col-lg-2 col-md-4">
+                                <label class="form-label small mb-1 d-block">PRIORITY</label>
+                                <select name="priority" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    <option value="all">All Priority</option>
+                                    {% for priority_key, priority_label in priority_choices %}
+                                    <option value="{{ priority_key }}" 
+                                            {% if priority_filter == priority_key %}selected{% endif %}>
+                                        {{ priority_label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Date Filter -->
+                            <div class="col-lg-2 col-md-4">
+                                <label class="form-label small mb-1 d-block">DUE DATE</label>
+                                <select name="date_filter" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    {% for key, label in date_filter_options %}
+                                    <option value="{{ key }}" 
+                                            {% if date_filter == key %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Assigned To Filter (Admin only) -->
+                            {% if is_admin %}
+                            <div class="col-lg-2 col-md-4">
+                                <label class="form-label small mb-1 d-block">ASSIGNED TO</label>
+                                <select name="assigned_to" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    <option value="all">All Users</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.id }}" 
+                                            {% if assigned_to_filter == user.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ user.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Sort Options -->
+                            <div class="col-lg-1 col-md-4">
+                                <label class="form-label small mb-1 d-block">SORT</label>
+                                <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    {% for key, label in sort_options %}
+                                    <option value="{{ key }}" 
+                                            {% if sort_by == key %}selected{% endif %}>
+                                        {{ label|slice:":15" }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Active Filters Display -->
+                        {% if search_query or status_filter or priority_filter or date_filter or assigned_to_filter %}
+                        <div class="mt-3 pt-2 border-top">
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <small class="text-muted">Active filters:</small>
+                                {% if search_query %}
+                                <span class="badge bg-info bg-opacity-10 text-info border border-info">
+                                    <i class="fas fa-search me-1"></i>"{{ search_query }}"
+                                </span>
+                                {% endif %}
+                                {% if status_filter and status_filter != 'all' %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">
+                                    Status: {{ status_filter }}
+                                </span>
+                                {% endif %}
+                                {% if priority_filter and priority_filter != 'all' %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">
+                                    Priority: {{ priority_filter }}
+                                </span>
+                                {% endif %}
+                                {% if date_filter and date_filter != 'all' %}
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success">
+                                    Date: {{ date_filter }}
+                                </span>
+                                {% endif %}
+                                {% if assigned_to_filter and assigned_to_filter != 'all' and is_admin %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">
+                                    User: {{ assigned_to_filter }}
+                                </span>
+                                {% endif %}
+                                <a href="{% url 'task_list' %}" class="btn btn-sm btn-outline-danger ms-auto">
+                                    <i class="fas fa-times me-1"></i> Clear All
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </form>
+                    
+                    <!-- Results Count -->
+                    <div class="mt-2">
+                        <p class="text-muted small mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Showing <strong>{{ page_obj.start_index }}-{{ page_obj.end_index }}</strong> of <strong>{{ filtered_tasks_count }}</strong> tasks
+                            {% if total_tasks != filtered_tasks_count %}
+                            (filtered from {{ total_tasks }} total)
+                            {% endif %}
+                        </p>
+                    </div>
                 </div>
                 
-                <div class="text-end">
-                    <span class="badge bg-{{ task.status|lower }}">{{ task.status }}</span>
-                    <br>
+                <div class="card-body px-0 pt-0 pb-2">
+                    {% if page_obj.object_list %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-items-center mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7 ps-3">Task</th>
+                                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Assigned To</th>
+                                    <th class="text-center text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Status</th>
+                                    <th class="text-center text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Priority</th>
+                                    <th class="text-center text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Due Date</th>
+                                    <th class="text-center text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in page_obj %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex flex-column">
+                                            <h6 class="mb-0 text-sm">{{ task.title }}</h6>
+                                            <p class="text-xs text-muted mb-0">
+                                                {% if task.description %}
+                                                    {% if task.description|length > 60 %}
+                                                        {{ task.description|slice:":60" }}...
+                                                    {% else %}
+                                                        {{ task.description }}
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="fst-italic">No description</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="text-xs font-weight-bold mb-0">{{ task.assigned_to.username }}</span>
+                                            <span class="text-xs text-muted">{{ task.assigned_to.get_full_name|default:"" }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <span class="badge badge-sm 
+                                            {% if task.status == 'DONE' %}bg-success
+                                            {% elif task.status == 'IN_PROGRESS' %}bg-info
+                                            {% elif task.status == 'BLOCKED' %}bg-danger
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ task.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <span class="badge badge-sm 
+                                            {% if task.priority == 'CRITICAL' %}bg-danger
+                                            {% elif task.priority == 'HIGH' %}bg-warning
+                                            {% elif task.priority == 'MEDIUM' %}bg-primary
+                                            {% else %}bg-success{% endif %}">
+                                            {{ task.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        {% if task.due_date %}
+                                        <div class="d-flex flex-column">
+                                            <span class="text-xs font-weight-bold {% if task.is_overdue %}text-danger{% endif %}">
+                                                {{ task.due_date|date:"M d, Y" }}
+                                            </span>
+                                            {% if task.is_overdue %}
+                                            <small class="text-danger">Overdue</small>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <span class="text-xs text-muted">No due date</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        {% if is_admin %}
+                                        <a href="{% url 'task_update' task.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit me-1"></i>Edit
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted small">View only</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                     
-                    {# 💡 FIX: Only Superusers see the Edit button #}
-                    {% if is_admin %}
-                        <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-outline-primary mt-2">Edit</a>
+                    <!-- Pagination -->
+                    {% if page_obj.paginator.num_pages > 1 %}
+                    <nav aria-label="Page navigation" class="mt-3">
+                        <ul class="pagination pagination-sm justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if priority_filter %}priority={{ priority_filter }}&{% endif %}{% if date_filter %}date_filter={{ date_filter }}&{% endif %}{% if assigned_to_filter and is_admin %}assigned_to={{ assigned_to_filter }}&{% endif %}sort={{ sort_by }}&page=1">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if priority_filter %}priority={{ priority_filter }}&{% endif %}{% if date_filter %}date_filter={{ date_filter }}&{% endif %}{% if assigned_to_filter and is_admin %}assigned_to={{ assigned_to_filter }}&{% endif %}sort={{ sort_by }}&page={{ page_obj.previous_page_number }}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if priority_filter %}priority={{ priority_filter }}&{% endif %}{% if date_filter %}date_filter={{ date_filter }}&{% endif %}{% if assigned_to_filter and is_admin %}assigned_to={{ assigned_to_filter }}&{% endif %}sort={{ sort_by }}&page={{ num }}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if priority_filter %}priority={{ priority_filter }}&{% endif %}{% if date_filter %}date_filter={{ date_filter }}&{% endif %}{% if assigned_to_filter and is_admin %}assigned_to={{ assigned_to_filter }}&{% endif %}sort={{ sort_by }}&page={{ page_obj.next_page_number }}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if priority_filter %}priority={{ priority_filter }}&{% endif %}{% if date_filter %}date_filter={{ date_filter }}&{% endif %}{% if assigned_to_filter and is_admin %}assigned_to={{ assigned_to_filter }}&{% endif %}sort={{ sort_by }}&page={{ page_obj.paginator.num_pages }}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-tasks fa-4x text-light bg-secondary rounded-circle p-4"></i>
+                        </div>
+                        <h5 class="text-muted mb-2">No tasks found</h5>
+                        <p class="text-muted mb-4">
+                            {% if search_query or status_filter or priority_filter or date_filter or assigned_to_filter %}
+                            Try adjusting your filters or search terms
+                            {% else %}
+                            {% if is_admin %}
+                            Get started by creating your first task
+                            {% else %}
+                            No tasks have been assigned to you yet.
+                            {% endif %}
+                            {% endif %}
+                        </p>
+                        {% if is_admin and not search_query and not status_filter and not priority_filter and not date_filter and not assigned_to_filter %}
+                        <a href="{% url 'task_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create Your First Task
+                        </a>
+                        {% elif search_query or status_filter or priority_filter or date_filter or assigned_to_filter %}
+                        <a href="{% url 'task_list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-redo me-2"></i>Clear All Filters
+                        </a>
+                        {% endif %}
+                    </div>
                     {% endif %}
                 </div>
             </div>
-            {% empty %}
-            <p class="alert alert-info mb-0">You have no tasks found matching the criteria.</p>
-            {% endfor %}
         </div>
     </div>
 </div>
 
 <style>
-.badge.bg-todo { background-color: #0d6efd !important; }
-.badge.bg-in_progress { background-color: #ffc107 !important; color: #000; }
-.badge.bg-done { background-color: #28a745 !important; }
-.badge.bg-blocked { background-color: #dc3545 !important; }
-
-.task-item {
-    border-left: 5px solid var(--primary-blue);
-    transition: transform 0.2s;
-    background-color: var(--white);
+/* ===== FIX FOR SEARCH AND FILTER SECTION ===== */
+/* Reset all form elements to ensure consistency */
+.form-control, .form-select, .input-group-text, .btn {
+    margin: 0;
+    line-height: 1.5;
 }
-.task-item:hover {
-    transform: translateX(5px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+
+/* Ensure all form controls have the same height */
+.input-group-sm > .form-control,
+.input-group-sm > .form-select,
+.input-group-sm > .input-group-text,
+.input-group-sm > .btn,
+.form-select-sm {
+    height: calc(1.5em + 0.5rem + 2px) !important;
+    min-height: 31px !important;
+    font-size: 0.875rem !important;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+}
+
+/* Fix input group alignment */
+.input-group-sm .input-group-text {
+    padding: 0.25rem 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.input-group-sm .form-control {
+    padding: 0.25rem 0.5rem !important;
+}
+
+/* Make sure labels are properly spaced */
+.form-label.small {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: #495057 !important;
+    margin-bottom: 0.25rem !important;
+    display: block !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Fix the row alignment */
+.row.g-2 {
+    align-items: flex-end !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.row.g-2 > [class*="col-"] {
+    padding-bottom: 0 !important;
+}
+
+/* Ensure all filter elements align at bottom */
+.col-lg-3, .col-lg-2, .col-md-6, .col-md-4 {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    height: 100% !important;
+}
+
+/* Fix for the search input group */
+.search-input-group {
+    display: flex !important;
+    align-items: center !important;
+    height: 31px !important;
+}
+
+/* Ensure borders are consistent */
+.form-control, .form-select, .btn {
+    border: 1px solid #ced4da !important;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+/* Remove any custom styles that might be interfering */
+.search-icon, .filter-select, .clear-search-btn {
+    all: unset;
+}
+
+/* Force Bootstrap's default styling for consistency */
+.input-group-sm {
+    border-radius: 0.25rem !important;
+}
+
+.input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+    margin-left: -1px !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+/* Card header specific fixes */
+.card-header {
+    padding: 1rem 1.5rem 0.5rem 1.5rem !important;
+}
+
+.card-header .row {
+    margin-bottom: 0.5rem !important;
+}
+
+/* Active filters section */
+.active-filters {
+    padding-top: 0.75rem !important;
+    margin-top: 0.5rem !important;
+}
+
+/* Results count */
+.results-count {
+    margin-top: 0.5rem !important;
+}
+
+/* Table styling - clean up */
+.table th {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 0.5rem !important;
+}
+
+.table td {
+    font-size: 0.875rem !important;
+    padding: 0.75rem 0.5rem !important;
+    vertical-align: middle !important;
+}
+
+/* Badge styling */
+.badge {
+    font-size: 0.65rem !important;
+    font-weight: 600 !important;
+    padding: 0.35em 0.65em !important;
+}
+
+/* Pagination fixes */
+.pagination-sm .page-link {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.75rem !important;
+}
+
+/* Responsive fixes */
+@media (max-width: 768px) {
+    .card-header {
+        padding: 0.75rem !important;
+    }
+    
+    .row.g-2 > [class*="col-"] {
+        margin-bottom: 1rem !important;
+    }
+    
+    .form-label.small {
+        margin-bottom: 0.125rem !important;
+    }
+}
+
+/* Override any conflicting styles from parent templates */
+#filterForm input,
+#filterForm select,
+#filterForm .input-group-text {
+    height: 31px !important;
+    min-height: 31px !important;
+    line-height: 1.5 !important;
+}
+
+/* Force consistency for all form elements */
+.form-control-sm, .form-select-sm {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.875rem !important;
+    border-radius: 0.25rem !important;
+}
+
+/* Make sure everything is perfectly aligned */
+.d-flex.flex-column {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Last resort: Force all form elements to same specs */
+#filterForm * {
+    box-sizing: border-box !important;
+}
+
+#filterForm .form-control,
+#filterForm .form-select {
+    height: 31px !important;
+    line-height: 1.5 !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.875rem !important;
+    border: 1px solid #ced4da !important;
+    border-radius: 0.25rem !important;
+}
+
+#filterForm .input-group-text {
+    height: 31px !important;
+    line-height: 1.5 !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.875rem !important;
+    border: 1px solid #ced4da !important;
+}
+
+#filterForm .btn {
+    height: 31px !important;
+    line-height: 1.5 !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.875rem !important;
 }
 </style>
+
+<script>
+// Auto-submit search after typing stops (debounce)
+let searchTimeout;
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+    searchInput.addEventListener('keyup', function(e) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (this.value.length > 0 || e.key === 'Enter') {
+                document.getElementById('filterForm').submit();
+            }
+        }, 500);
+    });
+}
+
+// Clear search function
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterForm').submit();
+}
+
+// Keep other form parameters when paginating
+document.querySelectorAll('.page-link').forEach(link => {
+    if (link.href.includes('page=')) {
+        const url = new URL(link.href);
+        const params = new URLSearchParams(url.search);
+        
+        // Add current filter values if not already in URL
+        const currentParams = new URLSearchParams(window.location.search);
+        ['q', 'status', 'priority', 'date_filter', 'assigned_to', 'sort'].forEach(param => {
+            if (currentParams.get(param) && !params.get(param)) {
+                params.set(param, currentParams.get(param));
+            }
+        });
+        
+        link.href = url.pathname + '?' + params.toString();
+    }
+});
+
+// Add visual feedback
+const filterForm = document.getElementById('filterForm');
+if (filterForm) {
+    filterForm.addEventListener('submit', function() {
+        const selects = this.querySelectorAll('select');
+        selects.forEach(select => {
+            select.disabled = true;
+            setTimeout(() => {
+                select.disabled = false;
+            }, 500);
+        });
+    });
+}
+
+// Add enter key support
+if (searchInput) {
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('filterForm').submit();
+        }
+    });
+}
+</script>
 {% endblock %}

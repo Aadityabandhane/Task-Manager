@@ -68,28 +68,158 @@ def settings_page(request):
 # --- Task Management Views ---
 # views.py
 
+
+# views.py - Updated task_list view
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.db.models import Q, Count
+from django.utils import timezone
+from .forms import SignUpForm, ProfileUpdateForm, TaskForm
+from .models import Profile, Task
+from django.core.paginator import Paginator
+
+# ... (keep your existing views up to task_list)
+
 @login_required
 def task_list(request):
-    
+    """
+    Enhanced task list with search, filter, and pagination
+    """
+    # Determine base queryset based on user role
     if request.user.is_superuser:
-        tasks = Task.objects.all().order_by('-due_date')
+        tasks = Task.objects.all()
         page_title = "All System Tasks"
     else:
-        tasks = Task.objects.filter(assigned_to=request.user).order_by('-due_date')
+        tasks = Task.objects.filter(assigned_to=request.user)
         page_title = "My Assigned Tasks"
-
-    status_filter = request.GET.get('status')
-    if status_filter:
-        tasks = tasks.filter(status=status_filter)
+    
+    # Initialize filter variables
+    search_query = ''
+    status_filter = ''
+    priority_filter = ''
+    assigned_to_filter = ''
+    date_filter = ''
+    sort_by = request.GET.get('sort', 'due_date')
+    
+    # ----- SEARCH FUNCTIONALITY -----
+    if 'q' in request.GET:
+        search_query = request.GET.get('q', '').strip()
+        if search_query:
+            tasks = tasks.filter(
+                Q(title__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(assigned_to__username__icontains=search_query) |
+                Q(assigned_to__first_name__icontains=search_query) |
+                Q(assigned_to__last_name__icontains=search_query)
+            )
+    
+    # ----- FILTER BY STATUS -----
+    if 'status' in request.GET:
+        status_filter = request.GET.get('status')
+        if status_filter and status_filter != 'all':
+            tasks = tasks.filter(status=status_filter)
+    
+    # ----- FILTER BY PRIORITY -----
+    if 'priority' in request.GET:
+        priority_filter = request.GET.get('priority')
+        if priority_filter and priority_filter != 'all':
+            tasks = tasks.filter(priority=priority_filter)
+    
+    # ----- FILTER BY ASSIGNED USER (Admin only) -----
+    if request.user.is_superuser and 'assigned_to' in request.GET:
+        assigned_to_filter = request.GET.get('assigned_to')
+        if assigned_to_filter and assigned_to_filter != 'all':
+            tasks = tasks.filter(assigned_to__id=assigned_to_filter)
+    
+    # ----- FILTER BY DATE -----
+    if 'date_filter' in request.GET:
+        date_filter = request.GET.get('date_filter')
+        today = timezone.now().date()
         
+        if date_filter == 'today':
+            tasks = tasks.filter(due_date__date=today)
+        elif date_filter == 'tomorrow':
+            tasks = tasks.filter(due_date__date=today + timezone.timedelta(days=1))
+        elif date_filter == 'week':
+            end_date = today + timezone.timedelta(days=7)
+            tasks = tasks.filter(due_date__date__range=[today, end_date])
+        elif date_filter == 'overdue':
+            tasks = tasks.filter(due_date__lt=timezone.now(), status__in=['TODO', 'IN_PROGRESS', 'BLOCKED'])
+        elif date_filter == 'no_date':
+            tasks = tasks.filter(due_date__isnull=True)
+    
+    # ----- SORTING FUNCTIONALITY -----
+    sort_options = {
+        'due_date': 'due_date',  # Ascending: oldest first
+        '-due_date': '-due_date',  # Descending: newest first
+        'priority': 'priority',  # Low to High (LOW, MEDIUM, HIGH, CRITICAL)
+        '-priority': '-priority',  # High to Low (CRITICAL, HIGH, MEDIUM, LOW)
+        'created_at': 'created_at',  # Oldest first
+        '-created_at': '-created_at',  # Newest first
+        'title': 'title',  # A-Z
+        '-title': '-title',  # Z-A
+        'status': 'status',  # Status order
+    }
+    
+    # Default to sorting by due_date if invalid sort option
+    sort_by = sort_options.get(sort_by, 'due_date')
+    tasks = tasks.order_by(sort_by)
+    
+    # ----- PAGINATION -----
+    paginator = Paginator(tasks, 10)  # Show 10 tasks per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get all users for admin filter dropdown
+    users = User.objects.all().order_by('username') if request.user.is_superuser else None
+    
+    # Get filter counts for active filters
+    total_tasks = tasks.count()
+    filtered_tasks_count = page_obj.paginator.count
+    
     context = {
-        'tasks': tasks,
-        # 💡 FIX APPLIED HERE: Reference the choices using the inner TextChoices class
-        'status_choices': Task.Status.choices, 
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'priority_filter': priority_filter,
+        'assigned_to_filter': assigned_to_filter,
+        'date_filter': date_filter,
+        'sort_by': sort_by,
+        'users': users,
+        'total_tasks': total_tasks,
+        'filtered_tasks_count': filtered_tasks_count,
+        'status_choices': Task.Status.choices,
+        'priority_choices': Task.Priority.choices,
         'page_title': page_title,
         'is_admin': request.user.is_superuser,
+        'date_filter_options': [
+            ('all', 'All Dates'),
+            ('today', 'Today'),
+            ('tomorrow', 'Tomorrow'),
+            ('week', 'Next 7 Days'),
+            ('overdue', 'Overdue'),
+            ('no_date', 'No Due Date'),
+        ],
+        'sort_options': [
+            ('due_date', 'Due Date (Oldest First)'),
+            ('-due_date', 'Due Date (Newest First)'),
+            ('priority', 'Priority (Low to High)'),
+            ('-priority', 'Priority (High to Low)'),
+            ('created_at', 'Created (Oldest First)'),
+            ('-created_at', 'Created (Newest First)'),
+            ('title', 'Title (A-Z)'),
+            ('-title', 'Title (Z-A)'),
+            ('status', 'Status'),
+        ],
     }
+    
     return render(request, "tasks/task_list.html", context)
+
+
+
+
 @login_required
 def task_create(request):
     """
