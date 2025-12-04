@@ -12,7 +12,6 @@ __pycache__/
 # Virtual Environment
 venv/
 env/
-/requirements.txt  # If you are using pip-compile/pip-tools, you might ignore the *generated* requirements.txt
 # Node dependencies (if using a front-end build system)
 node_modules/
 

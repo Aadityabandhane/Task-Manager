@@ -48,13 +48,13 @@ def dashboard(request):
 
 @login_required
 def profile(request):
-    profile = request.user.profile
+    profile, created = Profile.objects.get_or_create(user=request.user)
     return render(request, "profile.html", {"profile": profile})
 
 @login_required
 def settings_page(request):
-    profile = request.user.profile
-    
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
     if request.method == "POST":
         form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
