@@ -2,26 +2,104 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+
+<style>
+    /* Dashboard Card Style */
+    .dashboard-card {
+        background: linear-gradient(145deg, #ffffff, #f0f7ff);
+        border-radius: 18px;
+        padding: 35px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        transition: 0.3s ease;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .welcome-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 28px;
+        font-weight: 600;
+        color: #007bff;
+    }
+
+    .quick-links-text {
+        font-size: 15px;
+        color: #6c757d;
+    }
+
+    .dashboard-btn {
+        padding: 12px;
+        font-size: 17px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: 0.25s ease;
+    }
+    .dashboard-btn:hover {
+        transform: translateY(-3px);
+    }
+
+    .btn-custom-primary {
+        background: #007bff;
+        color: #fff !important;
+        border: none;
+    }
+
+    .btn-custom-success {
+        background: #28a745;
+        color: white !important;
+        border: none;
+    }
+
+    .btn-custom-danger {
+        background: #dc3545;
+        color: white !important;
+        border: none;
+    }
+</style>
+
+
 <div class="row justify-content-center">
     <div class="col-md-8">
-        <div class="card shadow mt-3 p-4">
-            <h2>👋 Welcome, {{ request.user.username }}</h2> 
-            <p class="text-secondary">Quick access links:</p>
-            <div class="d-grid gap-2 mt-3">
-                
-                {# 💡 NEW: Link to create tasks, visible ONLY to Superusers #}
+
+        <div class="dashboard-card mt-3">
+            
+            <h2 class="welcome-title">👋 Welcome, {{ request.user.username }}</h2>
+            <p class="quick-links-text">Choose an action below:</p>
+
+            <div class="d-grid gap-3 mt-4">
+
                 {% if request.user.is_superuser %}
-                    <a href="{% url 'task_create' %}" class="btn btn-success">Assign New Task</a>
+                <a href="{% url 'task_create' %}" class="btn dashboard-btn btn-custom-success">
+                    ➕ Assign New Task
+                </a>
                 {% endif %}
-                
-                <a href="{% url 'task_list' %}" class="btn btn-primary">View Tasks</a> 
-                
-                <a href="{% url 'profile' %}" class="btn btn-primary">View Profile</a>
-                <a href="{% url 'settings' %}" class="btn btn-primary">Edit Profile</a>
-                <a href="{% url 'analytics' %}" class="btn btn-primary">View Analytics</a>
-                <a href="{% url 'logout' %}" class="btn btn-danger mt-3">Logout</a>
+
+                <a href="{% url 'task_list' %}" class="btn dashboard-btn btn-custom-primary">
+                    📋 View All Tasks
+                </a>
+
+                <a href="{% url 'profile' %}" class="btn dashboard-btn btn-custom-primary">
+                    👤 View Profile
+                </a>
+
+                <a href="{% url 'settings' %}" class="btn dashboard-btn btn-custom-primary">
+                    ✏️ Edit Profile
+                </a>
+
+                <a href="{% url 'analytics' %}" class="btn dashboard-btn btn-custom-primary">
+                    📊 View Analytics
+                </a>
+
+                <a href="{% url 'logout' %}" class="btn dashboard-btn btn-custom-danger mt-2">
+                    🔒 Logout
+                </a>
             </div>
+
         </div>
+
     </div>
 </div>
+
 {% endblock %}

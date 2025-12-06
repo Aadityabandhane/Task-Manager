@@ -2,38 +2,151 @@
 {% block title %}Task Form{% endblock %}
 
 {% block content %}
+
+<style>
+
+    /* Card Styling */
+    .task-card {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 18px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.10);
+        margin-top: 30px;
+        transition: 0.3s ease;
+    }
+
+    .task-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.13);
+    }
+
+    /* Heading */
+    .task-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 20px;
+    }
+
+    /* Input Fields */
+    .form-control,
+    input[type="datetime-local"],
+    select, textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #dcdcdc;
+        border-radius: 10px;
+        transition: 0.3s;
+        font-size: 15px;
+    }
+
+    /* Focus Effect */
+    .form-control:focus,
+    input[type="datetime-local"]:focus,
+    select:focus,
+    textarea:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+        outline: none;
+    }
+
+    /* Label */
+    .form-label {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        display: block;
+        color: #1e293b;
+        letter-spacing: .5px;
+    }
+
+    /* Save Button */
+    .save-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        padding: 14px;
+        border: none;
+        color: #fff;
+        font-size: 17px;
+        border-radius: 12px;
+        cursor: pointer;
+        text-transform: uppercase;
+        margin-top: 15px;
+        transition: 0.3s ease;
+    }
+
+    .save-btn:hover {
+        background: linear-gradient(135deg, #4f46e5, #4338ca);
+        transform: translateY(-2px);
+    }
+
+    /* Cancel Button */
+    .cancel-btn {
+        display: block;
+        width: 100%;
+        background: #e5e7eb;
+        text-align: center;
+        padding: 14px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        margin-top: 10px;
+        font-weight: 600;
+        color: #374151;
+        transition: .3s;
+        text-decoration: none;
+    }
+
+    .cancel-btn:hover {
+        background: #d1d5db;
+    }
+
+</style>
+
+
 <div class="row justify-content-center">
     <div class="col-md-8">
-        <div class="card shadow mt-3 p-4">
-            <h2>➕ {{ page_title }}</h2>
+
+        <div class="task-card">
+            <h2 class="task-title">📝 {{ page_title }}</h2>
 
             <form method="POST">
                 {% csrf_token %}
-                
+
                 {% for field in form %}
-                <div class="mb-3">
-                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                    
-                    {% if field.name == 'due_date' and field.value %}
-                        <input type="datetime-local" 
-                               name="{{ field.name }}" 
-                               id="{{ field.id_for_label }}" 
-                               value="{{ field.value|date:'Y-m-d\TH:i' }}" 
-                               class="form-control">
-                    {% else %}
-                        {{ field }}
-                    {% endif %}
-                    
-                    {% if field.errors %}
-                        <div class="alert alert-danger p-1 mt-1 small">{{ field.errors }}</div>
-                    {% endif %}
-                </div>
+                    <div class="mb-3">
+
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+
+                        {% if field.name == 'due_date' and field.value %}
+                            <input type="datetime-local"
+                                name="{{ field.name }}"
+                                id="{{ field.id_for_label }}"
+                                value="{{ field.value|date:'Y-m-d\\TH:i' }}"
+                                class="form-control">
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+
+                        {% if field.errors %}
+                            <div class="alert alert-danger p-1 mt-1 small">
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+
+                    </div>
                 {% endfor %}
 
-                <button type="submit" class="mt-4">Save Task</button>
-                <a href="{% url 'task_list' %}" class="btn btn-secondary mt-3" style="width: 100%; display: block; text-transform: uppercase;">Cancel</a>
+                <button type="submit" class="save-btn">Save Task</button>
+
+                <a href="{% url 'task_list' %}" class="cancel-btn">
+                    Cancel
+                </a>
+
             </form>
         </div>
+
     </div>
 </div>
+
+
 {% endblock %}
