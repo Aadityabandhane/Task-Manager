@@ -2,18 +2,105 @@
 {% block title %}My Profile{% endblock %}
 
 {% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #e0f0ff, #c0e0ff);
+    }
+
+    .card {
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.15); /* glassy effect */
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        margin-top: 3rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.35);
+    }
+
+    h2 {
+        color: #007bff;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    /* Profile image */
+    #profile-image-container img {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 3px solid rgba(255,255,255,0.5);
+        object-fit: cover;
+        box-shadow: 0 4px 15px rgba(0,123,255,0.4);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    #profile-image-container img:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(0,123,255,0.6);
+    }
+
+    /* Placeholder image */
+    .profile-placeholder {
+        width: 120px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #6c757d;
+        background: rgba(255,255,255,0.25);
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.5);
+    }
+
+    /* Profile details */
+    #profile-details p {
+        font-size: 1.05rem;
+        color: #181616;
+        margin-bottom: 0.75rem;
+    }
+
+    #profile-details strong {
+        color: #007bff;
+    }
+
+    /* Button */
+    .btn-primary {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1rem;
+        border-radius: 0.75rem;
+        background: #007bff;
+        border: none;
+        color: #fff;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,123,255,0.4);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,123,255,0.6);
+    }
+</style>
+
 <div class="row justify-content-center">
     <div class="col-md-8">
-        <div class="card shadow mt-3">
+        <div class="card shadow">
             <h2>👤 My Profile</h2>
 
             <div class="text-center mb-4">
                 {% if profile.profile_image %}
                 <div id="profile-image-container">
-                    <img src="{{ profile.profile_image.url }}" width="120" height="120" class="rounded-circle">
+                    <img src="{{ profile.profile_image.url }}" alt="Profile Image">
                 </div>
                 {% else %}
-                <div class="bg-light p-3 border rounded-circle mx-auto" style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #6c757d;">
+                <div class="profile-placeholder mx-auto">
                     N/A
                 </div>
                 {% endif %}

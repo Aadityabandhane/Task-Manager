@@ -1,169 +1,156 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
+    <!-- Favicon using emoji or text -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌀</text></svg>">
+
 <head>
-    <title>MyProject | {% block title %}{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <title>Task-Manager | {% block title %}{% endblock %}</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
 
-
-
     <style>
-        /* --------------------------- ROOT COLORS --------------------------- */
         :root {
-            --primary-blue: #007bff;
-            --light-blue: #e9f5ff;
-            --white: #ffffff;
-            --dark-text: #343a40;
-            --border-light: #ced4da;
-            --danger: #dc3545;
+            --blue: #1E90FF;         /* bright blue for glow & text */
+            --dark-blue: #007bff;    /* navbar gradient base */
+            --nav-bg: rgba(30,144,255,0.4); /* glassy navbar background */
+            --icon-bg: rgba(255,255,255,0.15); /* glassy icon base */
+            --bg: #E0F0FF;           /* page background */
         }
 
-        /* --------------------------- GLOBAL BODY --------------------------- */
         body {
             font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-            background-color: var(--light-blue);
-            color: var(--dark-text);
-            padding-top: 65px; 
-            line-height: 1.6;
+            background: var(--bg);
+            padding-top: 80px;
         }
 
-       /* --------------------------- NAVBAR (UPGRADED) --------------------------- */
-.navbar {
-    background: linear-gradient(135deg, #007bff, #0056d6);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.20);
-    position: fixed;
-    top: 0;
-    width: 100%;
-    z-index: 1000;
-    padding: 12px 25px;
-    transition: all 0.3s ease-in-out;
-}
+        /* ---------------- NAVBAR ---------------- */
+        .navbar {
+            background: var(--nav-bg);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 20px rgba(30,144,255,0.4);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 14px 30px;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+        }
 
-/* Smooth shrink effect when scrolling (optional) */
-.navbar.shrink {
-    padding: 8px 25px;
-    background: linear-gradient(135deg, #0056d6, #003c9e);
-}
+        .navbar-brand {
+            font-family: 'Roboto', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: #ffffff !important;
+            margin-left: 45%;
+        }
 
-/* Brand Logo */
-.navbar-brand {
-    font-weight: 700;
-    letter-spacing: 1px;
-    color: #fff !important;
-    font-size: 1.7rem;
-    transition: 0.3s ease;
-}
+        /* ---------------- ICON BUTTONS ---------------- */
+        .icon-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff !important;
+            margin-left: 14px;
+            font-size: 20px;
+            position: relative;
+            text-decoration: none;
+            background: var(--icon-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
 
-.navbar-brand:hover {
-    opacity: 0.9;
-    transform: scale(1.05);
-}
+        /* Glow effect with pulse */
+        .icon-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            filter: blur(15px);
+            z-index: -1;
+            animation: pulse 2s infinite;
+        }
 
-/* Navbar Buttons */
-.navbar-buttons a {
-    margin-left: 12px;
-    font-weight: 500;
-    padding: 7px 14px !important;
-    border-radius: 8px !important;
-    transition: 0.3s ease;
-}
+        /* Blue glow for all buttons */
+        .btn-assign::after,
+        .btn-task::after,
+        .btn-analytics::after,
+        .btn-profile::after,
+        .btn-settings::after,
+        .btn-logout::after {
+            box-shadow: 0 0 25px 5px var(--blue);
+        }
 
-/* Outline Buttons */
-.btn-outline-light {
-    border-color: rgba(255,255,255,0.85) !important;
-    color: white !important;
-}
+        /* Pulse animation */
+        @keyframes pulse {
+            0%   { transform: scale(0.95); opacity: 0.7; }
+            50%  { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
 
-.btn-outline-light:hover {
-    background: white !important;
-    color: var(--primary-blue) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(255,255,255,0.4);
-}
+        .icon-btn:hover {
+            transform: translateY(-4px) scale(1.1);
+            box-shadow: 0 0 30px 8px var(--blue);
+        }
 
-/* Danger Button */
-.btn-danger {
-    background: #ff3b3b !important;
-    color: #fff !important;
-    border: none;
-}
-
-.btn-danger:hover {
-    background: #c82333 !important;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(255,0,0,0.4);
-}
-
-        /* --------------------------- CARD GLOBAL --------------------------- */
+        /* ---------------- CARD ---------------- */
         .card {
-            border: none;
             border-radius: 1rem;
-            box-shadow: 0 1rem 2rem rgba(0,0,0,0.15);
-            background-color: var(--white);
-            padding: 2rem;
-            transition: transform 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-        }
-
-        /* --------------------------- HEADINGS --------------------------- */
-        h2, h3 {
-            font-weight: 600;
-            color: var(--primary-blue);
-            border-bottom: 2px solid var(--light-blue);
-            padding-bottom: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        /* --------------------------- INPUTS --------------------------- */
-        input, textarea, select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-light);
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            border-color: var(--primary-blue);
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
-        }
-
-        /* PRIMARY BUTTON */
-        .btn-primary {
-            background-color: var(--primary-blue);
             border: none;
-            color: white !important;
-            font-size: 1rem;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            transition: 0.3s ease;
-            text-transform: uppercase;
-            width: 100%;
+            box-shadow: 0 1rem 2rem rgba(30,144,255,0.25);
+            padding: 2rem;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
         }
 
-        .btn-primary:hover {
-            background-color: #0056b3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0,123,255,0.4);
-            
-        }
-
-
-        
-        .brand-text {
-            font-family: 'Poppins', sans-serif;
-            font-size: 28px;
+        h2, h3 {
+            color: var(--dark-blue);
             font-weight: 600;
-            color: #ffcc00 !important;
-            letter-spacing: 1px;
+        }
+
+        /* ---------------- BACK BUTTON ---------------- */
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(30,144,255,0.35);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 22px;
+            z-index: 2000;
+            box-shadow: 0 5px 20px rgba(30,144,255,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(30,144,255,0.7);
+        }
+
+        /* ---------------- RESPONSIVE ---------------- */
+        @media(max-width: 768px){
+            .navbar-brand { margin-left: 35%; font-size: 22px; }
+            .icon-btn { width: 46px; height: 46px; font-size: 18px; }
+            .back-btn { width: 45px; height: 45px; font-size: 20px; }
         }
 
     </style>
@@ -171,40 +158,57 @@
 
 <body>
 
-<!-- --------------------------- NAVBAR --------------------------- -->
-<nav class="navbar navbar-dark d-flex justify-content-between align-items-center">
-    
-<a class="navbar-brand" href="{% url 'dashboard' %}"
-   style="font-family: 'Roboto', sans-serif; font-size: 26px; font-weight: 700; color: #2ecc71;">
-    Task-manager
+<!-- ================= BACK BUTTON ================= -->
+<a href="javascript:history.back()" class="back-btn" title="Go Back">
+    <i class="fas fa-arrow-left"></i>
 </a>
 
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar navbar-dark d-flex justify-content-between align-items-center">
 
-    <div class="navbar-buttons d-flex align-items-center">
+    <a class="navbar-brand" href="{% url 'dashboard' %}">
+        Task-Manager
+    </a>
+
+    <div class="d-flex align-items-center">
+
         {% if request.user.is_authenticated %}
 
             {% if request.user.is_superuser %}
-                <a href="{% url 'task_create' %}" class="btn btn-outline-light">Assign Task</a>
+            <a href="{% url 'task_create' %}" class="icon-btn btn-assign" title="Assign Task">
+                <i class="fas fa-plus"></i>
+            </a>
             {% endif %}
 
-            <a href="{% url 'task_list' %}" class="btn btn-outline-light">Tasks</a>
-            <a href="{% url 'analytics' %}" class="btn btn-outline-light">Analytics</a>
-            <a href="{% url 'profile' %}" class="btn btn-outline-light">Profile</a>
-            <a href="{% url 'settings' %}" class="btn btn-outline-light">Settings</a>
+            <a href="{% url 'task_list' %}" class="icon-btn btn-task" title="Tasks">
+                <i class="fas fa-list-check"></i>
+            </a>
 
-            <a href="{% url 'logout' %}" class="btn btn-danger">
-    <i class="fas fa-sign-out-alt"></i>
-</a>
+            <a href="{% url 'analytics' %}" class="icon-btn btn-analytics" title="Analytics">
+                <i class="fas fa-chart-line"></i>
+            </a>
 
+            <a href="{% url 'profile' %}" class="icon-btn btn-profile" title="Profile">
+                <i class="fas fa-user"></i>
+            </a>
+
+            <a href="{% url 'settings' %}" class="icon-btn btn-settings" title="Settings">
+                <i class="fas fa-gear"></i>
+            </a>
+
+            <a href="{% url 'logout' %}" class="icon-btn btn-logout" title="Logout">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
 
         {% else %}
-            <a href="{% url 'login' %}" class="btn btn-outline-light">Login</a>
+            <a href="{% url 'login' %}" class="icon-btn btn-task" title="Login">
+                <i class="fas fa-right-to-bracket"></i>
+            </a>
         {% endif %}
     </div>
-
 </nav>
 
-<!-- --------------------------- PAGE CONTENT --------------------------- -->
+<!-- ================= PAGE CONTENT ================= -->
 <div class="container mt-4">
     {% block content %}
     {% endblock %}

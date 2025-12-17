@@ -4,67 +4,73 @@
 {% block content %}
 
 <style>
-    /* Dashboard Card Style */
+    /* ---------------- DASHBOARD CARD ---------------- */
     .dashboard-card {
-        background: linear-gradient(145deg, #ffffff, #f0f7ff);
+        background: rgba(255, 255, 255, 0.55); /* semi-transparent glass effect */
+        backdrop-filter: blur(10px);
         border-radius: 18px;
         padding: 35px;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-        transition: 0.3s ease;
+        box-shadow: 0 8px 25px rgba(0, 123, 255, 0.2);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 123, 255, 0.15);
     }
     .dashboard-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 123, 255, 0.25);
     }
 
+    /* ---------------- WELCOME TITLE ---------------- */
     .welcome-title {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'Roboto', sans-serif;
         font-size: 28px;
-        font-weight: 600;
-        color: #007bff;
+        font-weight: 700;
+        color: #0056d6;
+        margin-bottom: 10px;
     }
 
     .quick-links-text {
         font-size: 15px;
-        color: #6c757d;
+        color: #343a40;
+        margin-bottom: 25px;
     }
 
+    /* ---------------- DASHBOARD BUTTONS ---------------- */
     .dashboard-btn {
-        padding: 12px;
+        padding: 12px 18px;
         font-size: 17px;
         border-radius: 10px;
         font-weight: 600;
-        transition: 0.25s ease;
+        transition: all 0.25s ease;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(0,123,255,0.2);
+        border: 1px solid rgba(0,123,255,0.2);
+        backdrop-filter: blur(5px);
     }
     .dashboard-btn:hover {
         transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(0,123,255,0.3);
     }
 
     .btn-custom-primary {
         background: #007bff;
         color: #fff !important;
-        border: none;
     }
-
     .btn-custom-success {
         background: #28a745;
-        color: white !important;
-        border: none;
+        color: #fff !important;
     }
-
     .btn-custom-danger {
         background: #dc3545;
-        color: white !important;
-        border: none;
+        color: #fff !important;
     }
 </style>
 
-
 <div class="row justify-content-center">
     <div class="col-md-8">
-
         <div class="dashboard-card mt-3">
-            
             <h2 class="welcome-title">👋 Welcome, {{ request.user.username }}</h2>
             <p class="quick-links-text">Choose an action below:</p>
 
@@ -95,10 +101,9 @@
                 <a href="{% url 'logout' %}" class="btn dashboard-btn btn-custom-danger mt-2">
                     🔒 Logout
                 </a>
+
             </div>
-
         </div>
-
     </div>
 </div>
 
