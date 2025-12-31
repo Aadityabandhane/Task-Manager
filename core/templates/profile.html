@@ -31,8 +31,8 @@
 
     /* Profile image */
     #profile-image-container img {
-        width: 120px;
-        height: 120px;
+        width: 190px;
+        height: 190px;
         border-radius: 50%;
         border: 3px solid rgba(255,255,255,0.5);
         object-fit: cover;
@@ -61,7 +61,7 @@
 
     /* Profile details */
     #profile-details p {
-        font-size: 1.05rem;
+        font-size: 1.70rem;
         color: #181616;
         margin-bottom: 0.75rem;
     }
@@ -92,7 +92,7 @@
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card shadow">
-            <h2>👤 My Profile</h2>
+            <h2><p><strong></strong>👤 {{ profile.full_name|default:"Profile" }}</p></h2>
 
             <div class="text-center mb-4">
                 {% if profile.profile_image %}
