@@ -312,3 +312,65 @@ def analytics_page(request):
         'is_admin': request.user.is_superuser
     }
     return render(request, "analytics.html", context)
+
+
+
+
+import json
+from datetime import datetime
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from .models import Task
+
+
+@login_required
+def task_calendar(request):
+    return render(request, "tasks/calendar.html")
+
+
+@login_required
+def task_calendar_events(request):
+    tasks = Task.objects.filter(assigned_to=request.user, due_date__isnull=False)
+
+    events = []
+    for task in tasks:
+        events.append({
+            "id": task.id,
+            "title": task.title,
+            "start": task.due_date.isoformat(),
+            "extendedProps": {
+                "status": task.status,
+                "priority": task.priority,
+                "description": task.description or ""
+            },
+            "color": (
+                "#28a745" if task.status == "DONE" else
+                "#dc3545" if task.priority == "CRITICAL" else
+                "#1E90FF"
+            )
+        })
+
+    return JsonResponse(events, safe=False)
+
+
+@login_required
+def tasks_by_date(request):
+    date_str = request.GET.get("date")
+    selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+
+    tasks = Task.objects.filter(
+        assigned_to=request.user,
+        due_date__date=selected_date
+    )
+
+    data = []
+    for task in tasks:
+        data.append({
+            "title": task.title,
+            "status": task.status,
+            "priority": task.priority,
+            "description": task.description or "",
+        })
+
+    return JsonResponse(data, safe=False)
